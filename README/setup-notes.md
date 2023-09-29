@@ -30,7 +30,7 @@ install another library: python-dotenv. Make a .env file and you can set the FLA
 FLASK_APP=heroesvillains.py
 
 You will also want to update this to have debug mode set to on or else you will have to keep shutting down the server if 
-you make any updates.
+you make any updates. in .env put: FLASK_DEBUG=1
 
 
 
@@ -42,3 +42,15 @@ initial ones to include are .env and your virtual environment folder (the one th
 Start working on creating your first flask end point. This will be denoted by @ (decorator) and tie it to the instance
 in this case @app. and then you have to choose what you are doing (POST, GET, ROUTE, etc.). in this case choose route
 and then you have to pass the endpoint: @app.route('/index) and then you will have to run a "def"
+
+for initial testing, create a db.py and you can use that to test. When testing, it will be better to create an insomnia collection. Create a collection in insomnia with a related name.
+
+Now start creating CRUD operations. These are basic operations like GET/POST/PUT/DELETE or think about it as
+GET/CREATE/EDIT/DELETE. You will need to set an end point for these and each one will run a different function. You can start
+off doing these all in the main.py file (runescape.py), but eventually you can break them off into their own separate files.
+Set up a resources folder. in there make another folder for each "table" -> in this case it's "users" and "items".
+inside the specific folders, set up a routes folder. you can also move the initial database info that you are testing with and move it into a db.py file.
+
+when importing libraries and instantiating them, make an __init__ file. Make an app folder and make an __init__ file in there. The __init__ file makes it a subdirectory. If there a folder with __init__ file, if we import that folder it will run that file.
+
+Next, inside each specific folder (in this case it's users and items) make it's own __init__ file. This will serve as a blueprint for each folder.

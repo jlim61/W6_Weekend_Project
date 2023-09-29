@@ -1,8 +1,3 @@
-from flask import Flask
-
-# make an instance of the Flask class (usually default is app)
-app = Flask(__name__)
-
-@app.route('/index')
-def index():
-    return
+from app import app
+# after switching everything to the app __init__ file, add this line.
+# it allows to import from the folder and is importing the instance in that folder
