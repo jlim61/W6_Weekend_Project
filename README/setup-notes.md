@@ -37,3 +37,8 @@ you make any updates.
 when working with sensitive data, create a .gitignore file and enter in any file names. this will ignore them and not
 upload them to github.
 initial ones to include are .env and your virtual environment folder (the one that is auto populated)
+
+
+Start working on creating your first flask end point. This will be denoted by @ (decorator) and tie it to the instance
+in this case @app. and then you have to choose what you are doing (POST, GET, ROUTE, etc.). in this case choose route
+and then you have to pass the endpoint: @app.route('/index) and then you will have to run a "def"
