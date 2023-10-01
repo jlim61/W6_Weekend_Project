@@ -21,6 +21,10 @@ class UpdateUserSchema(Schema):
     email = fields.Str()
     ign = fields.Str()
 
+class UserNestedSchema(UserSchema):
+    items = fields.List(fields.Nested(ItemSchema), dump_only=True)
+    friend_list = fields.List(fields.Nested(UserSchema), dump_only=True)
+
 class DeleteUserSchema(Schema):
     username = fields.Str(required=True)
     password = fields.Str(required=True, load_only=True)

@@ -3,7 +3,7 @@ from flask_smorest import abort
 from flask.views import MethodView
 from sqlalchemy.exc import IntegrityError
 
-from schemas import DeleteUserSchema, ItemSchema, UpdateUserSchema, UserSchema
+from schemas import DeleteUserSchema, ItemSchema, UpdateUserSchema, UserNestedSchema, UserSchema
 from . import bp
 from .UserModel import UserModel
 from db import users, items
@@ -60,7 +60,7 @@ class User(MethodView):
 
 
     # get a singlular user
-    @bp.response(200, UserSchema)
+    @bp.response(200, UserNestedSchema)
     def get(self, user_id):
         user = UserModel.query.get_or_404(user_id, description='User not found')
         return user
@@ -72,3 +72,25 @@ def get_all_items_from_user(user_id):
         abort(404, message='User not found')
     user_items = [item for item in items.values() if item['user_id'] == user_id]
     return user_items
+
+@bp.route('/user/friend/<friending_id>/<friended_id>')
+class AddFriend(MethodView):
+
+    # add to friend list
+    @bp.response(200, UserSchema(many=True))
+    def post(self, friending_id, friended_id):
+        user = UserModel.query.get(friending_id)
+        friend_to_add = UserModel.query.get(friended_id)
+        if user and friend_to_add:
+            user.add_friend(friend_to_add)
+            return user.friend_list.all()
+        abort(400, message='Invalid User Info')
+
+    # unfriend
+    def put(self, friending_id, friended_id):
+        user = UserModel.query.get(friending_id)
+        friend_to_remove = UserModel.query.get(friended_id)
+        if user and friend_to_remove:
+            user.unfriend(friend_to_remove)
+            return {'message': f'{friend_to_remove.ign} was removed from your friends list'}
+        abort(400, message='Invalid User Info')

@@ -183,3 +183,33 @@ class UserModel(db.Model):
     because you might be getting errors trying to upgrade or on the migrate saying you're not up to date
 
     now that table for items has been conncted to elephantsql, you can adjust the routes for items.
+
+
+============================================================================================
+Adding Adding Friend Routes (Many to Many Route)
+
+first, you will need to create a table for this as it will start needing it's own friending and friended ids. See example below:
+
+friends = db.Table('friends',
+    db.Column('friending_id', db.Integer, db.ForeignKey('users.id')),
+    db.Column('friended_id', db.Integer, db.ForeignKey('users.id'))
+)
+
+Also need to add the relationship to the UserModel:
+class UserModel(db.Model):
+
+    __tablename__ = 'users'
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String, unique=True, nullable=False)
+    password_hash = db.Column(db.String, nullable=False)
+    email = db.Column(db.String, unique=True, nullable=False)
+    ign = db.Column(db.String, unique=True, nullable=False)
+    items = db.relationship('ItemModel', backref='author', lazy='dynamic', cascade='all, delete')
+    friend_list = db.relationship('UserModel', secondary=friends,
+        primary_join = friends.friending_id == id,
+        secondary_join = friends.friended_id == id,
+        backref = db.backref('friends', lazy='dynamic'),
+        lazy='dynamic'
+    )
+
