@@ -226,4 +226,6 @@ to generate the real secret key for .env file go into python though terminal by 
 
 copy the number and enter into .env: JWT_SECRET_KEY=number
 
-can also set up separate files for users called auth_routes. these can contain user registration, login and logout. the registration is really a create user so you can cut that from the regular routes and move it to auth routs.
+can also set up separate files for users called auth_routes. these can contain user registration, login and logout. the registration is really a create user so you can cut that from the regular routes and move it to auth routes.
+
+You will need to apply jwt to these and have it return access codes to provide security. this will allow only certain methods to be run if the user is logged in and is trying to do something affecting tied to their account.
