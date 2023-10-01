@@ -1,2 +1,3 @@
 .env
 runescape_venv/
+migrations/

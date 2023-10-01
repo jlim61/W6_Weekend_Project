@@ -6,7 +6,7 @@ users = {
         'ign': 'firewildstar'},
 
     '2':{
-            'username': 'chomby67',
+        'username': 'chomby67',
         'password': '123',
         'email': 'chomby@gmail.com',
         'ign': 'Pogo'},

@@ -1,50 +1,70 @@
 from flask import request
 from uuid import uuid4
-from flask_smorest import abort
 from flask.views import MethodView
+from flask_smorest import abort
+from sqlalchemy.exc import IntegrityError
 
+from resources.users.UserModel import UserModel
+
+from .ItemModel import ItemModel
+from schemas import ItemSchema
 from . import bp
-from db import items
 
-@bp.get('/')
+@bp.route('/')
 class ItemList(MethodView):
 
     # get all items
+    @bp.response(200, ItemSchema(many=True))
     def get(self):
-        return {'items': items}
+        items = ItemModel.query.all()
+        return items
 
-    # create an item
-    def post(self):
-        item_data = request.get_json()
-        if 'item_name' not in item_data or "user_id" not in item_data:
-            abort(400, message='Please include item name and user id')
-        items[uuid4().hex] = item_data
-        return item_data, 201
+    @bp.arguments(ItemSchema)
+    @bp.response(200, ItemSchema)
+    def post(self, item_data):
+       # ** destructures data and gets the keys for associated keys and values for associated keys
+       i = ItemModel(**item_data)
+       u = UserModel.query.get(item_data['user_id'])
+       if u:
+          i.save()
+          return i
+       else:
+          abort(400, message="Invalid User Id")
 
 @bp.route('/<item_id>')
 class Item(MethodView):
 
+    # get a singular item
+    @bp.response(200, ItemSchema)
+    def get(self, item_id):
+        i = ItemModel.query.get(item_id)
+        if i:
+            return i
+        abort(400, message='Invalid Item ID')
+
     # edit an item
-    def put(self, item_id):
-        item_data = request.get_json()
-        if item_id in items:
-            item = items[item_id]
-            item['item_name'] = item_data['item_name']
-            return item['item_name'], 200
-        abort(404, message='Item not found')
+    @bp.arguments(ItemSchema)
+    @bp.response(200, ItemSchema)
+    def put(self, item_data, item_id):
+        i = ItemModel.query.get(item_id)
+        if i and item_data['item_name']:
+            if i.user_id == item_data['user_id']:
+                i.item_name = item_data['item_name']
+                i.description = item_data.get('description', i.description)
+                i.price = item_data.get('price', i.price)
+                i.save()
+                return i
+        abort(404, message="Invalid Item Data")
 
     # delete an item
     def delete(self, item_id):
-        try:
-            deleted_item = items.pop(item_id)
-            return {'message': f'{deleted_item["item_name"]} deleted'}, 202
-        except:
-            abort(404, message='Item not found')
-
-    # get a singular item
-    def get(self, item_id):
-        try:
-            item = items[item_id]
-            return item, 200
-        except:
-            abort(404, message='Item not found')
+        req_data = request.get_json()
+        user_id = req_data['user_id']
+        i = ItemModel.query.get(item_id)
+        if i:
+            if i.user_id == user_id:
+                i.delete()
+                return {'message': 'Item Deleted'}, 202
+            abort(400, message='User doesn\'t have rights')
+        abort(400, message='Invalid Item ID')
+        

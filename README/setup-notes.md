@@ -14,9 +14,9 @@ pip install flask     -> installing flask
 pip install python-dotenv     -> installing python-dotenv
 pip install marshmallow      -> installing marshmallow
 pip install flask-smorest      -> installing flask-smorest
-pip install 
-pip install 
-pip install 
+pip install flask-sqlalchemy      -> sqlalchemy
+pip install flask-migrate      -> migrate
+pip install psycopg2      -> psycopg2 
 pip install 
 
 Flask by default looks at app.py. if i rename the file to something else like heroesvillains.py
@@ -98,3 +98,88 @@ everything in the class will be caps lock:
     OPENAPI_SWAGGER_UI_URL = 'https://cdn.jsdelivr.net/npm/swagger-ui-dist/'
 
 then go back to app __init__ and from Config import Config. THen in between where you set app and api, make one in the middle: app.config.from_object(Config)
+
+================================================================================================
+Moving on to Schemas
+
+make a schemas.py file. This will utilize marshmallow so you will need to run the following:
+from marshmallow import schema, fields
+
+in a schema, you are defining what fields are needed. additionally there is dump_only and load_only.
+dump_only says that it will only give out this info, it doesn't take in.
+load_only says that it will only take in this info, it doesn't give out. (think passwords, it will take it in but not give it out)
+
+general example:
+class PostSchema(Schema):
+    id = fields.Str(dump_only=True)
+    item_name = fields.Str(required=True)
+    user_id = fields.Str(required=True)
+
+after making a schema, you can start decorating the methods with bp.arguments to take something in (as some fields in the schema are required) and you can also decorate with bp.response to send information out.
+remember, @bp.arguments is validating the info we put in. so if our schema is requiring a username and password, if they only put username, it won't work. the @bp.response gives back that information from the schema.
+
+Once responses have been added. we can create elephantsql database so that we can take in data and not lose it upon a new session. once created, you will need to get the URL. then you want to put that in your .env file. you can do that by setting
+SQL_DATABASE_URL =<url> but, you will need to at ql in the url
+Then in config file, you will need to set the sqlalchemy to get that database. you will need to import os and then:
+SQLALCHEMY_DATABASE_URI = os.environ.get('SQL_DATABASE_URL')
+Then you will need to pip install flask-sqlalchemy and flask-migrate
+Now you will have to instantiate this inside the app init file
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+db = SQLAlchemy(app)
+migrate =Migrate(app, db) -> it needs to take in db
+
+then we can start working on making model pages. so for each specific table folder (in this case user and items) make a UserModel and ItemModel file
+
+in UserModel, you can from app import db to get the database.
+each attribute in this class UserModel(db.Model)
+is going to be a column in our table. Once you have set up all the columns and made whichever ones nullable and not, install:
+pip install psycopg2
+
+to securely hash a password:
+from werkzeug.security import generate_password_hash, check_password_hash
+
+to connect to elephantsql database, run these:
+flask db init -> add the migrations folder that generates to .gitignore
+flask db migrate -m "first migrate" -> it's like the add. and commit in github
+flask db upgrade -> this is the push, without this you wont' see your tables in elephantsql
+
+now that we are connected, we can update some of the routes. we won't need to uuid4 anymore because we are going to be using werkzeug to hash the passwords.
+to send things, you need to make in the model page a save function:
+a save function to send it to the database and a delete function to remove it off the database
+   def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+When making a model for something that has a foreign key such as item in this case. The item, you have a user id coming from users. Look at the ItemModel to see how you would reference a foreignkey.
+from app import db
+
+class ItemModel(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+    item_name = db.Column(db.String, nullable=False)
+    description = db.Column(db.String)
+    price = db.Column(db.String)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+Additionally, we can create a link on the UserModel for items. This would give all the items owned by the user. Review the items =db.relationship line as that shows how to do it. The backref uses that key word to allow you to see all their items.
+class UserModel(db.Model):
+
+    __tablename__ = 'users'
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String, unique=True, nullable=False)
+    password_hash = db.Column(db.String, nullable=False)
+    email = db.Column(db.String, unique=True, nullable=False)
+    ign = db.Column(db.String, unique=True, nullable=False)
+    items = db.relationship('ItemModel', backref='author', lazy='dynamic', cascade='all, delete')
+
+    you can then run flask db migrate -m'message and flask db upgrade to add the item table.
+    if the info doesn't match for the datatype, it can give you an error. Try running flask db downgrade, flask db stamp head, flask db heads
+    because you might be getting errors trying to upgrade or on the migrate saying you're not up to date
+
+    now that table for items has been conncted to elephantsql, you can adjust the routes for items.
