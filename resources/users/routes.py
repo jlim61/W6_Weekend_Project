@@ -1,4 +1,5 @@
 from flask import request
+from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_smorest import abort
 from flask.views import MethodView
 from sqlalchemy.exc import IntegrityError
@@ -18,36 +19,23 @@ class UserList(MethodView):
         users = UserModel.query.all()
         return users
 
-# create user
-    @bp.arguments(UserSchema)
-    @bp.response(201, UserSchema)
-    def post(self, user_data):
-        user = UserModel()
-        user.from_dict(user_data)
-        try:
-            user.save()
-            return user_data
-        except IntegrityError:
-            abort(400, message='Username, Email, or IGN already taken')
-
     # delete a user
+    @jwt_required()
     @bp.arguments(DeleteUserSchema)
-    def delete(self):
-        user_data = request.get_json()
-        user = UserModel.query.filter_by(username=user_data['username']).first()
-        if user and user.check_password(user_data['password']):
+    def delete(self, user_data):
+        user_id = get_jwt_identity()
+        user = UserModel.query.get(user_id)
+        if user and user.username == user_data['username'] and user.check_password(user_data['password']):
             user.delete()
             return {'message': f'{user_data["username"]} deleted'}, 202
         abort(400, message='Username od Password Invalid')
   
-
-@bp.route('/user/<user_id>')
-class User(MethodView):
-
     # edit a user
+    @jwt_required()
     @bp.arguments(UpdateUserSchema)
     @bp.response(200, UserSchema)
-    def put(self, user_data, user_id):
+    def put(self, user_data):
+        user_id = get_jwt_identity()
         user = UserModel.query.get_or_404(user_id, description='User not found')
         if user and user.check_password(user_data['password']):
             try:
@@ -57,7 +45,8 @@ class User(MethodView):
             except IntegrityError:
                 abort(400, message='Username, Email, or IGN already taken')
 
-
+@bp.route('/user/<user_id>')
+class User(MethodView):
 
     # get a singlular user
     @bp.response(200, UserNestedSchema)
@@ -73,12 +62,14 @@ def get_all_items_from_user(user_id):
     user_items = [item for item in items.values() if item['user_id'] == user_id]
     return user_items
 
-@bp.route('/user/friend/<friending_id>/<friended_id>')
+@bp.route('/user/friend/<friended_id>')
 class AddFriend(MethodView):
 
     # add to friend list
+    @jwt_required()
     @bp.response(200, UserSchema(many=True))
-    def post(self, friending_id, friended_id):
+    def post(self, friended_id):
+        friending_id = get_jwt_identity()
         user = UserModel.query.get(friending_id)
         friend_to_add = UserModel.query.get(friended_id)
         if user and friend_to_add:
@@ -87,7 +78,9 @@ class AddFriend(MethodView):
         abort(400, message='Invalid User Info')
 
     # unfriend
-    def put(self, friending_id, friended_id):
+    @jwt_required()
+    def put(self, friended_id):
+        friending_id = get_jwt_identity()
         user = UserModel.query.get(friending_id)
         friend_to_remove = UserModel.query.get(friended_id)
         if user and friend_to_remove:

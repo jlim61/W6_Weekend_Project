@@ -5,7 +5,7 @@ class ItemSchema(Schema):
     item_name = fields.Str(required=True)
     description = fields.Str()
     price = fields.Str()
-    user_id = fields.Int(required=True)
+    user_id = fields.Int(dump_only=True)
 
 class UserSchema(Schema):
     id = fields.Str(dump_only=True)
@@ -27,4 +27,9 @@ class UserNestedSchema(UserSchema):
 
 class DeleteUserSchema(Schema):
     username = fields.Str(required=True)
+    password = fields.Str(required=True, load_only=True)
+
+class AuthUserSchema(Schema):
+    username = fields.Str()
+    email = fields.Str()
     password = fields.Str(required=True, load_only=True)

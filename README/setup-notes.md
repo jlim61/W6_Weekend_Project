@@ -17,7 +17,7 @@ pip install flask-smorest      -> installing flask-smorest
 pip install flask-sqlalchemy      -> sqlalchemy
 pip install flask-migrate      -> migrate
 pip install psycopg2      -> psycopg2 
-pip install 
+pip install flask-jwt-extended      -> flask-jwt-extended
 
 Flask by default looks at app.py. if i rename the file to something else like heroesvillains.py
 have to set it in the terminal to have it look to the other file by running: set FLASK_APP=<'file name>
@@ -213,3 +213,17 @@ class UserModel(db.Model):
         lazy='dynamic'
     )
 
+================================================================================================================
+access-token and security
+
+first we must pip install flask-jwt-extended and then add it to our app init file
+then you need to add to our  Config: JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
+remember to add the real value in the .env file so that it doesn't get shown on github.
+to generate the real secret key for .env file go into python though terminal by running the following:
+>python
+>from secrets import SystemRandom
+>SystemRandom().getrandbits(128)
+
+copy the number and enter into .env: JWT_SECRET_KEY=number
+
+can also set up separate files for users called auth_routes. these can contain user registration, login and logout. the registration is really a create user so you can cut that from the regular routes and move it to auth routs.
